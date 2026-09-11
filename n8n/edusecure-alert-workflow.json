@@ -1,0 +1,9 @@
+{
+  "name":"EduSecure - Alertmanager para Incidentes",
+  "nodes":[
+    {"parameters":{"httpMethod":"POST","path":"prometheus-alert","responseMode":"onReceived","options":{}},"id":"webhook","name":"Alertmanager Webhook","type":"n8n-nodes-base.webhook","typeVersion":2,"position":[260,300]},
+    {"parameters":{"method":"POST","url":"http://api:8080/api/incidentes/webhook","sendHeaders":true,"headerParameters":{"parameters":[{"name":"X-EduSecure-Webhook-Secret","value":"edusecure-local-webhook"}]},"sendBody":true,"contentType":"raw","rawContentType":"application/json","body":"={\n  \"type\": $json.body?.alerts?.[0]?.labels?.category || $json.body?.alerts?.[0]?.labels?.alertname || \"monitoramento\",\n  \"severity\": $json.body?.alerts?.[0]?.labels?.severity || \"medium\",\n  \"description\": $json.body?.alerts?.[0]?.annotations?.description || $json.body?.alerts?.[0]?.annotations?.summary || \"Alerta recebido pelo n8n\",\n  \"source\": \"Prometheus/Alertmanager via n8n\"\n}"},"id":"api","name":"Registrar Incidente","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[520,300]}
+  ],
+  "connections":{"Alertmanager Webhook":{"main":[[{"node":"Registrar Incidente","type":"main","index":0}]]}},
+  "active":false,"settings":{"executionOrder":"v1"},"versionId":"b6e3d0fc-edusecure-360-lab"
+}

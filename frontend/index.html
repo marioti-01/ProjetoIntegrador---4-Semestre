@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EduSecure 360</title><link rel="stylesheet" href="/styles.css"></head>
+<body><header><div><strong>EduSecure 360</strong><span>Portal Educacional Seguro</span></div><button id="logout" class="ghost hidden">Sair</button></header>
+<main>
+<section id="loginCard" class="card login"><h1>Acesso ao ambiente</h1><p>Use uma conta fictícia do laboratório.</p><form id="loginForm"><label>E-mail<input id="email" type="email" value="aluno@edusecure.local" required></label><label>Senha<input id="password" type="password" value="Aluno@123" required></label><button>Entrar</button></form><div class="demo"><b>Contas de demonstração</b><code>aluno@edusecure.local / Aluno@123</code><code>professor@edusecure.local / Professor@123</code><code>admin@edusecure.local / Admin@123</code></div><p id="loginMsg" class="msg"></p></section>
+<section id="app" class="hidden"><div class="hero card"><div><small>AMBIENTE EDUCACIONAL</small><h1 id="welcome">Bem-vindo</h1><p id="role"></p></div><div class="status"><span></span> Sistema online</div></div><div id="content"></div></section>
+</main><script src="/app.js"></script></body></html>

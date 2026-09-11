@@ -1,0 +1,13 @@
+{
+  "annotations":{"list":[]},"editable":true,"graphTooltip":0,"links":[],"panels":[
+    {"type":"stat","title":"API Online","gridPos":{"h":4,"w":6,"x":0,"y":0},"targets":[{"expr":"up{job=\"edusecure-api\"}","legendFormat":"API"}],"options":{"reduceOptions":{"calcs":["lastNotNull"]},"orientation":"auto","textMode":"auto"}},
+    {"type":"stat","title":"Falhas de Login (5m)","gridPos":{"h":4,"w":6,"x":6,"y":0},"targets":[{"expr":"increase(edusecure_login_attempts_total{result=\"failed\"}[5m])","legendFormat":"Falhas"}]},
+    {"type":"stat","title":"Logins com Sucesso (5m)","gridPos":{"h":4,"w":6,"x":12,"y":0},"targets":[{"expr":"increase(edusecure_login_attempts_total{result=\"success\"}[5m])","legendFormat":"Sucessos"}]},
+    {"type":"stat","title":"Incidentes Abertos","gridPos":{"h":4,"w":6,"x":18,"y":0},"targets":[{"expr":"edusecure_active_incidents","legendFormat":"Abertos"}]},
+    {"type":"timeseries","title":"Tentativas de Login","gridPos":{"h":8,"w":12,"x":0,"y":4},"targets":[{"expr":"rate(edusecure_login_attempts_total[1m])","legendFormat":"{{result}}"}]},
+    {"type":"timeseries","title":"Requisições HTTP por Status","gridPos":{"h":8,"w":12,"x":12,"y":4},"targets":[{"expr":"rate(edusecure_http_requests_total[1m])","legendFormat":"{{status}}"}]},
+    {"type":"timeseries","title":"CPU dos Containers","gridPos":{"h":8,"w":12,"x":0,"y":12},"targets":[{"expr":"sum by (name) (rate(container_cpu_usage_seconds_total{name=~\".*edusecure.*\"}[1m])) * 100","legendFormat":"{{name}}"}]},
+    {"type":"timeseries","title":"Memória dos Containers","gridPos":{"h":8,"w":12,"x":12,"y":12},"targets":[{"expr":"container_memory_working_set_bytes{name=~\".*edusecure.*\"}","legendFormat":"{{name}}"}]}
+  ],
+  "refresh":"5s","schemaVersion":41,"tags":["edusecure","security"],"templating":{"list":[]},"time":{"from":"now-15m","to":"now"},"timezone":"browser","title":"EduSecure 360 - Security Operations Dashboard","uid":"edusecure360","version":1
+}

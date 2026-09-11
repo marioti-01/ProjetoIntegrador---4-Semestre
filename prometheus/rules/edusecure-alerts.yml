@@ -1,0 +1,30 @@
+groups:
+  - name: edusecure-security
+    rules:
+      - alert: EduSecurePossibleBruteForce
+        expr: increase(edusecure_login_attempts_total{result="failed"}[1m]) >= 5
+        for: 0s
+        labels:
+          severity: high
+          category: brute_force
+        annotations:
+          summary: "Possível força bruta no EduSecure"
+          description: "Foram registradas 5 ou mais falhas de login em 1 minuto."
+      - alert: EduSecureApiDown
+        expr: up{job="edusecure-api"} == 0
+        for: 15s
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "API EduSecure indisponível"
+          description: "O Prometheus não consegue coletar métricas da API há pelo menos 15 segundos."
+      - alert: EduSecureHigh5xxRate
+        expr: increase(edusecure_http_requests_total{status=~"5.."}[2m]) >= 5
+        for: 0s
+        labels:
+          severity: medium
+          category: application
+        annotations:
+          summary: "Muitos erros 5xx"
+          description: "A aplicação registrou múltiplos erros de servidor em curto período."

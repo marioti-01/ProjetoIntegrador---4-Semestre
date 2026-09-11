@@ -1,0 +1,137 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: edusecure-postgres
+    environment:
+      POSTGRES_DB: edusecure
+      POSTGRES_USER: edusecure
+      POSTGRES_PASSWORD: edusecure_lab
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edusecure -d edusecure"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [edusecure]
+
+  api:
+    build: ./src/EduSecure.Api
+    container_name: edusecure-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=edusecure;Username=edusecure;Password=edusecure_lab
+      Jwt__Key: EDUSECURE-LAB-CHAVE-JWT-LOCAL-ALTERE-EM-PRODUCAO-2026
+      Jwt__Issuer: EduSecure360
+      Jwt__Audience: EduSecure360Users
+      Security__WebhookSecret: edusecure-local-webhook
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # NOVO: certificado .pfx gerado via `dotnet dev-certs https -ep edusecure-dev.pfx -p edusecure_lab`
+      # montado só leitura no path apontado pelo appsettings.json (Kestrel:Certificates:Default:Path)
+      - ./edusecure-dev.pfx:/https/edusecure-dev.pfx:ro
+    ports:
+      - "5000:8080"
+      # NOVO: porta HTTPS. Interna 8443 (casada com appsettings.json), exposta em 5001 no host.
+      - "5001:8443"
+    networks: [edusecure]
+
+  portal:
+    build: ./frontend
+    container_name: edusecure-portal
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on: [api]
+    ports:
+      - "8080:80"
+    networks: [edusecure]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: edusecure-prometheus
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    depends_on: [api, alertmanager]
+    ports:
+      - "9090:9090"
+    networks: [edusecure]
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: edusecure-alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+    ports:
+      - "9093:9093"
+    networks: [edusecure]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: edusecure-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on: [prometheus]
+    ports:
+      - "3000:3000"
+    networks: [edusecure]
+
+  n8n:
+    image: n8nio/n8n:1.108.2
+    container_name: edusecure-n8n
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://n8n:5678/
+      GENERIC_TIMEZONE: America/Sao_Paulo
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n:/files:ro
+    ports:
+      - "5678:5678"
+    networks: [edusecure]
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: edusecure-cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    ports:
+      - "8081:8080"
+    networks: [edusecure]
+
+  attack-simulator:
+    build: ./simulator
+    container_name: edusecure-attack-simulator
+    environment:
+      TARGET: http://portal
+      EMAIL: admin@edusecure.local
+    depends_on: [portal]
+    profiles: [demo]
+    networks: [edusecure]
+
+networks:
+  edusecure:
+    name: edusecure-network
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+  n8n_data:
