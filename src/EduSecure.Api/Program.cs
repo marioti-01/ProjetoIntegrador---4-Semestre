@@ -71,6 +71,13 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddHttpsRedirection(options =>
+{
+    // NOVO: porta HTTPS visível de fora do container (mapeada no docker-compose:
+    // "5001:8443"). Sem isso, o redirect apontaria para a porta interna 8443,
+    // que não existe fora do container.
+    options.HttpsPort = 5001;
+});
 builder.Services.AddHealthChecks();
 
 // ── NOVO: HSTS (só entra em produção; em dev o middleware é um no-op seguro) ──
@@ -91,8 +98,17 @@ app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", 
 // ── NOVO: segurança de transporte ──
 // Agora que o Kestrel tem endpoint HTTPS configurado (dotnet dev-certs https --trust
 // + appsettings.json), HSTS e o redirect HTTP→HTTPS podem rodar em qualquer ambiente.
+//
+// EXCEÇÃO: /metrics e /health são chamados internamente pelo Prometheus/health checks
+// via rede Docker (hostname "api", não "localhost"). O certificado .pfx só é válido
+// para "localhost", então forçar HTTPS nessas rotas quebra o scrape (erro de TLS:
+// "certificate is valid for localhost... not api"). Mantemos essas rotas em HTTP puro
+// e só redirecionamos as rotas de negócio da API.
 app.UseHsts();
-app.UseHttpsRedirection();
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/metrics")
+            && !context.Request.Path.StartsWithSegments("/health"),
+    branch => branch.UseHttpsRedirection());
 
 // ── NOVO: headers de segurança (CSP, clickjacking, MIME sniffing, referrer) ──
 // Resolve de uma vez os findings: CSP ausente, X-Frame-Options ausente,

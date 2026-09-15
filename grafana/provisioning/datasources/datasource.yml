@@ -6,3 +6,20 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: false
+
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: edusecure
+    user: edusecure
+    editable: false
+    jsonData:
+      sslmode: "disable"
+      postgresVersion: 1700
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: "edusecure_lab"
